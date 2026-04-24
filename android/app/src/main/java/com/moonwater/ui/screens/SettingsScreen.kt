@@ -81,7 +81,7 @@ fun SettingsScreen(storageManager: StorageManager, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Row(modifier = Modifier.fillMaxWidth(), gap = Arrangement.spacedBy(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedTextField(
                     value = wakeTime,
                     onValueChange = { wakeTime = it },

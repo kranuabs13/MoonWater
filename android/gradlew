@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# MoonWater Gradle Wrapper Script
+# (Simplified version for this project)
+
+set -e
+
+# Path to the gradle wrapper jar
+APP_HOME=$(pwd)
+WRAPPER_JAR="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
+WRAPPER_PROPERTIES="$APP_HOME/gradle/wrapper/gradle-wrapper.properties"
+
+# Check if jar exists
+if [ ! -f "$WRAPPER_JAR" ]; then
+    echo "Warning: gradle-wrapper.jar missing. Attempting to run with system gradle if available."
+    exec gradle "$@"
+fi
+
+# Run the wrapper
+exec java -Xmx64m -cp "$WRAPPER_JAR" org.gradle.wrapper.GradleWrapperMain "$@"
