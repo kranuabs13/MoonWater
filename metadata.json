@@ -1,0 +1,8 @@
+{
+  "name": "MoonWater",
+  "description": "A simple and clean water drinking reminder app with Hebrew RTL support, helping users track and remember to drink water throughout the day.",
+  "requestFramePermissions": [
+    "notifications"
+  ],
+  "majorCapabilities": []
+}

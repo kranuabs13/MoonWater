@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">MoonWater</string>
+    <string name="drink_water">שתיתי מים</string>
+    <string name="goal">יעד יומי</string>
+    <string name="consumed">נצרך היום</string>
+    <string name="remaining">נותר עוד</string>
+    <string name="settings">הגדרות</string>
+    <string name="wake_up_time">שעת יקיצה</string>
+    <string name="sleep_time">שעת שינה</string>
+    <string name="interval">מרווח תזכורת (דקות)</string>
+    <string name="water_goal_ml">יעד מים (מ״ל)</string>
+    <string name="next">הבא</string>
+    <string name="start">מתחילים</string>
+    <string name="onboarding_title">ברוכים הבאים ל-MoonWater</string>
+    <string name="download_apk">הורד APK</string>
+    <string name="notification_title">זמן לשתות מים 💧</string>
+    <string name="notification_text">אל תשכחו לשתות מים כדי להישאר רעננים!</string>
+    <string name="reminders_enabled">תזכורות פעילות</string>
+    <string name="reset_progress">איפוס התקדמות להיום</string>
+    <string name="save">שמור</string>
+</resources>
