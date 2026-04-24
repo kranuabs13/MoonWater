@@ -123,6 +123,19 @@ fun SettingsScreen(storageManager: StorageManager, onBack: () -> Unit) {
                 Text(stringResource(R.string.reset_progress), fontWeight = FontWeight.Bold)
             }
 
+            val context = androidx.compose.ui.platform.LocalContext.current
+            TextButton(
+                onClick = { com.moonwater.utils.APKDownloadHelper.download(context) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                androidx.compose.material3.Icon(
+                    androidx.compose.material.icons.Icons.Default.Download, 
+                    contentDescription = null
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.download_apk), fontWeight = FontWeight.Medium)
+            }
+
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
