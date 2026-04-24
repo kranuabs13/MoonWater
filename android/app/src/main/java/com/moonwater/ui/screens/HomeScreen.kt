@@ -1,19 +1,19 @@
 package com.moonwater.ui.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.moonwater.R
 import com.moonwater.data.StorageManager
+import com.moonwater.ui.components.BottleView
 import com.moonwater.utils.APKDownloadHelper
 import kotlinx.coroutines.launch
 
@@ -22,8 +22,9 @@ import kotlinx.coroutines.launch
 fun HomeScreen(storageManager: StorageManager, onNavigateToSettings: () -> Unit) {
     val dailyGoal by storageManager.dailyGoal.collectAsState(initial = 2000)
     val currentIntake by storageManager.currentIntake.collectAsState(initial = 0)
+    val bottleSize by storageManager.bottleSize.collectAsState(initial = 750)
+    val bottleLevel by storageManager.bottleLevel.collectAsState(initial = 1.0f)
     val scope = rememberCoroutineScope()
-    var showAmountDialog by remember { mutableStateOf(false) }
 
     val progress = if (dailyGoal > 0) currentIntake.toFloat() / dailyGoal else 0f
     val remaining = (dailyGoal - currentIntake).coerceAtLeast(0)
@@ -38,9 +39,9 @@ fun HomeScreen(storageManager: StorageManager, onNavigateToSettings: () -> Unit)
                 title = { Text(stringResource(id = R.string.app_name)) },
                 actions = {
                     IconButton(onClick = onNavigateToSettings) {
-                        Text(stringResource(R.string.settings))
+                        Icon(Icons.Default.Settings, contentDescription = null)
                     }
-                    IconButton(onClick = { APKDownloadHelper.download(storageManager.context) }) {
+                    TextButton(onClick = { APKDownloadHelper.download(storageManager.context) }) {
                         Text(stringResource(R.string.download_apk), fontSize = 10.sp)
                     }
                 }
@@ -56,75 +57,47 @@ fun HomeScreen(storageManager: StorageManager, onNavigateToSettings: () -> Unit)
         ) {
             Text(stringResource(R.string.goal) + ": $dailyGoal מ״ל", style = MaterialTheme.typography.titleLarge)
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             
-            // Simple Progress Circle
-            Box(contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    progress = progress.coerceIn(0f, 1f),
-                    modifier = Modifier.size(200.dp),
-                    strokeWidth = 12.dp,
-                    color = Color(0xFF2196F3)
-                )
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("${(progress * 100).toInt()}%", style = MaterialTheme.typography.headlineLarge)
-                    Text("$currentIntake / $dailyGoal", style = MaterialTheme.typography.bodyMedium)
+            Text("הקש על הבקבוק כדי לעדכן כמה שתית", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            BottleView(
+                level = bottleLevel,
+                onLevelChange = { newLevel ->
+                    scope.launch {
+                        storageManager.updateBottleLevel(newLevel, bottleSize)
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.consumed) + ": $currentIntake מ״ל", style = MaterialTheme.typography.headlineSmall)
+                Spacer(modifier = Modifier.width(16.dp))
+                IconButton(onClick = { scope.launch { storageManager.refillBottle() } }) {
+                    Icon(Icons.Default.Refresh, contentDescription = "מילוי בקבוק")
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            Text(stringResource(R.string.remaining) + ": $remaining מ״ל", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.remaining) + ": $remaining מ״ל", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.outline)
 
             Spacer(modifier = Modifier.weight(1f))
 
-            Button(
-                onClick = { showAmountDialog = true },
+            LinearProgressIndicator(
+                progress = progress.coerceIn(0f, 1f),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
-            ) {
-                Text(stringResource(R.string.drink_water), fontSize = 20.sp)
-            }
+                    .height(12.dp),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text("${(progress * 100).toInt()}% מהיעד היומי", style = MaterialTheme.typography.labelLarge)
         }
     }
-
-    if (showAmountDialog) {
-        AmountSelectionDialog(
-            onDismiss = { showAmountDialog = false },
-            onSelect = { amount ->
-                scope.launch {
-                    storageManager.updateIntake(amount)
-                    showAmountDialog = false
-                }
-            }
-        )
-    }
-}
-
-@Composable
-fun AmountSelectionDialog(onDismiss: () -> Unit, onSelect: (Int) -> Unit) {
-    val amounts = listOf(150, 250, 330, 500)
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("כמה שתית?") },
-        text = {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(amounts) { amount ->
-                    Button(onClick = { onSelect(amount) }) {
-                        Text("$amount מ״ל")
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("ביטול") }
-        }
-    )
 }

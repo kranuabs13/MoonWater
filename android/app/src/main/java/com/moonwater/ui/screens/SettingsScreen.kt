@@ -23,18 +23,21 @@ fun SettingsScreen(storageManager: StorageManager, onBack: () -> Unit) {
     val sleepTimeFlow = storageManager.sleepTime.collectAsState(initial = "23:00")
     val intervalFlow = storageManager.interval.collectAsState(initial = 60)
     val dailyGoalFlow = storageManager.dailyGoal.collectAsState(initial = 2000)
+    val bottleSizeFlow = storageManager.bottleSize.collectAsState(initial = 750)
     val remindersEnabledFlow = storageManager.remindersEnabled.collectAsState(initial = true)
 
     var wakeTime by remember { mutableStateOf(wakeTimeFlow.value) }
     var sleepTime by remember { mutableStateOf(sleepTimeFlow.value) }
     var interval by remember { mutableStateOf(intervalFlow.value.toString()) }
     var dailyGoal by remember { mutableStateOf(dailyGoalFlow.value.toString()) }
+    var bottleSize by remember { mutableStateOf(bottleSizeFlow.value.toString()) }
     var remindersEnabled by remember { mutableStateOf(remindersEnabledFlow.value) }
 
     LaunchedEffect(wakeTimeFlow.value) { wakeTime = wakeTimeFlow.value }
     LaunchedEffect(sleepTimeFlow.value) { sleepTime = sleepTimeFlow.value }
     LaunchedEffect(intervalFlow.value) { interval = intervalFlow.value.toString() }
     LaunchedEffect(dailyGoalFlow.value) { dailyGoal = dailyGoalFlow.value.toString() }
+    LaunchedEffect(bottleSizeFlow.value) { bottleSize = bottleSizeFlow.value.toString() }
     LaunchedEffect(remindersEnabledFlow.value) { remindersEnabled = remindersEnabledFlow.value }
 
     Scaffold(
@@ -53,7 +56,8 @@ fun SettingsScreen(storageManager: StorageManager, onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             OutlinedTextField(
@@ -72,6 +76,13 @@ fun SettingsScreen(storageManager: StorageManager, onBack: () -> Unit) {
                 value = interval,
                 onValueChange = { interval = it },
                 label = { Text(stringResource(R.string.interval)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = bottleSize,
+                onValueChange = { bottleSize = it },
+                label = { Text("נפח הבקבוק (מ״ל)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -97,16 +108,22 @@ fun SettingsScreen(storageManager: StorageManager, onBack: () -> Unit) {
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
             ) {
+                Icon(Icons.Default.Refresh, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.reset_progress))
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
                     scope.launch {
                         storageManager.saveOnboardingData(
-                            wakeTime, sleepTime, interval.toIntOrNull() ?: 60, dailyGoal.toIntOrNull() ?: 2000
+                            wakeTime, 
+                            sleepTime, 
+                            interval.toIntOrNull() ?: 60, 
+                            dailyGoal.toIntOrNull() ?: 2000,
+                            bottleSize.toIntOrNull() ?: 750
                         )
                         storageManager.toggleReminders(remindersEnabled)
                         onBack()

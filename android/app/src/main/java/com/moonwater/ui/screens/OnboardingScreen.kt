@@ -21,15 +21,17 @@ fun OnboardingScreen(storageManager: StorageManager, onComplete: () -> Unit) {
     var sleepTime by remember { mutableStateOf("23:00") }
     var interval by remember { mutableStateOf("60") }
     var dailyGoal by remember { mutableStateOf("2000") }
+    var bottleSize by remember { mutableStateOf("750") }
     
     val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(24.dp)
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         Spacer(modifier = Modifier.height(48.dp))
         Text(
@@ -39,7 +41,7 @@ fun OnboardingScreen(storageManager: StorageManager, onComplete: () -> Unit) {
             color = MaterialTheme.colorScheme.primary
         )
         
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
             value = wakeTime,
@@ -64,6 +66,14 @@ fun OnboardingScreen(storageManager: StorageManager, onComplete: () -> Unit) {
         )
 
         OutlinedTextField(
+            value = bottleSize,
+            onValueChange = { bottleSize = it },
+            label = { Text("מה נפח הבקבוק שלך? (מ״ל)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
             value = dailyGoal,
             onValueChange = { dailyGoal = it },
             label = { Text(stringResource(R.string.water_goal_ml)) },
@@ -71,13 +81,17 @@ fun OnboardingScreen(storageManager: StorageManager, onComplete: () -> Unit) {
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
                 scope.launch {
                     storageManager.saveOnboardingData(
-                        wakeTime, sleepTime, interval.toIntOrNull() ?: 60, dailyGoal.toIntOrNull() ?: 2000
+                        wakeTime, 
+                        sleepTime, 
+                        interval.toIntOrNull() ?: 60, 
+                        dailyGoal.toIntOrNull() ?: 2000,
+                        bottleSize.toIntOrNull() ?: 750
                     )
                     onComplete()
                 }
