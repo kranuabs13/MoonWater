@@ -8,8 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -34,7 +33,10 @@ class MainActivity : ComponentActivity() {
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
-        // Permission handled
+        if (isGranted) {
+            // Permission granted, trigger a schedule check
+            applySchedulerSync()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,6 +45,9 @@ class MainActivity : ComponentActivity() {
         notificationScheduler = NotificationScheduler(this)
 
         checkNotificationPermission()
+        
+        // Initial sync of scheduler
+        applySchedulerSync()
 
         setContent {
             MoonWaterTheme {
@@ -51,14 +56,15 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background
                     ) {
-                        var isOnboarded by remember { mutableStateOf<Boolean?>(null) }
+                        var isOnboardedState by remember { mutableStateOf<Boolean?>(null) }
                         
                         LaunchedEffect(Unit) {
-                            isOnboarded = storageManager.isOnboarded.first()
+                            storageManager.checkDailyReset()
+                            isOnboardedState = storageManager.isOnboarded.first()
                         }
                         
-                        if (isOnboarded != null) {
-                            AppNavigation(storageManager, notificationScheduler, isOnboarded == true)
+                        if (isOnboardedState != null) {
+                            AppNavigation(storageManager, notificationScheduler, isOnboardedState!!)
                         }
                     }
                 }
@@ -73,6 +79,18 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    
+    private fun applySchedulerSync() {
+        lifecycleScope.launch {
+            val enabled = storageManager.remindersEnabled.first()
+            if (enabled) {
+                val interval = storageManager.interval.first()
+                notificationScheduler.scheduleReminders(interval)
+            } else {
+                notificationScheduler.cancelReminders()
+            }
+        }
+    }
 }
 
 @Composable
@@ -82,15 +100,18 @@ fun AppNavigation(
     isOnboarded: Boolean
 ) {
     val navController = rememberNavController()
-    val startDestination = if (isOnboarded) "home" else "onboarding"
     val scope = rememberCoroutineScope()
+    val startDestination = if (isOnboarded) "home" else "onboarding"
 
     NavHost(navController = navController, startDestination = startDestination) {
         composable("onboarding") {
             OnboardingScreen(storageManager) {
                 scope.launch {
-                    val interval = storageManager.interval.first()
-                    scheduler.scheduleReminders(interval)
+                    val enabled = storageManager.remindersEnabled.first()
+                    if (enabled) {
+                        val interval = storageManager.interval.first()
+                        scheduler.scheduleReminders(interval)
+                    }
                     navController.navigate("home") {
                         popUpTo("onboarding") { inclusive = true }
                     }

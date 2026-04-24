@@ -6,30 +6,36 @@ import java.util.concurrent.TimeUnit
 
 class NotificationScheduler(private val context: Context) {
 
+    companion object {
+        private const val WORK_NAME = "water_reminder_work"
+        private const val TAG = "water_reminder"
+    }
+
     fun scheduleReminders(intervalMinutes: Int) {
-        val reminderRequest = PeriodicWorkRequestBuilder<ReminderWorker>(
-            intervalMinutes.toLong(), TimeUnit.MINUTES
-        )
-            .setConstraints(Constraints.NONE)
-            .addTag("water_reminder")
+        val workManager = WorkManager.getInstance(context)
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
             .build()
 
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            "water_reminder",
+        // WorkManager minimum periodic interval is 15 minutes
+        val effectiveInterval = intervalMinutes.toLong().coerceAtLeast(15L)
+
+        val workRequest = PeriodicWorkRequestBuilder<ReminderWorker>(
+            effectiveInterval, TimeUnit.MINUTES
+        )
+            .addTag(TAG)
+            .setConstraints(constraints)
+            .build()
+
+        workManager.enqueueUniquePeriodicWork(
+            WORK_NAME,
             ExistingPeriodicWorkPolicy.UPDATE,
-            reminderRequest
+            workRequest
         )
     }
 
     fun cancelReminders() {
-        WorkManager.getInstance(context).cancelAllWorkByTag("water_reminder")
-    }
-}
-
-class ReminderWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
-    override suspend fun doWork(): Result {
-        // Logic to check time bounds and send notification
-        // (Simplified for this project code)
-        return Result.success()
+        WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
     }
 }
